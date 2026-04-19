@@ -14,7 +14,7 @@ int main()
 {
     stdio_init_all();   // Inicializa os tipos stdio padrão presentes ligados ao binário
 
-    // Inicialização do i2c
+    // Inicialização do i2c para acesso a tela OLED
     i2c_init(i2c1, ssd1306_i2c_clock * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -24,6 +24,21 @@ int main()
     // Processo de inicialização completo do OLED SSD1306
     ssd1306_init();
 
+	    struct render_area frame_area = {
+        start_column : 0,
+        end_column : ssd1306_width - 1,
+        start_page : 0,
+        end_page : ssd1306_n_pages - 1
+    };
+
+    calculate_render_area_buffer_length(&frame_area);
+
+    // zera o display inteiro
+    uint8_t ssd[ssd1306_buffer_length];
+    memset(ssd, 0, ssd1306_buffer_length);
+    render_on_display(ssd, &frame_area);
+	
+	restart:
 
     const uint8_t bitmap_128x64[] = { 
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
@@ -90,14 +105,27 @@ int main()
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-     };
+      };
+	char *text[] = {
+        "  Bem-vindo ao  ",
+        "  EmbarcaGame  ",
+		"",
+		"",
+		"  Pressione  ",
+		"  um botao  "};
 
+    int y = 0;
+    for (uint i = 0; i < count_of(text); i++)
+    {
+        ssd1306_draw_string(ssd, 5, y, text[i]);
+        y += 10;
+    }
+    render_on_display(ssd, &frame_area);
     ssd1306_t ssd_bm;
-    ssd1306_init_bm(&ssd_bm, 128, 64, false, 0x3C, i2c1);
-    ssd1306_config(&ssd_bm);
+    // ssd1306_init_bm(&ssd_bm, 128, 64, false, 0x3C, i2c1);
+    // ssd1306_config(&ssd_bm);
 
-    ssd1306_draw_bitmap(&ssd_bm, bitmap_128x64);
-
+    // ssd1306_draw_bitmap(&ssd_bm, bitmap_128x64);
 
     while(true) {
         sleep_ms(1000);
